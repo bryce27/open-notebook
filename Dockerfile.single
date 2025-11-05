@@ -77,9 +77,10 @@ COPY --from=builder /app/frontend/public /app/frontend/public
 # Create directories for data persistence
 RUN mkdir -p /app/data /mydata
 
-# Expose ports for API and Frontend
-# Railway uses the first exposed port for healthchecks, so API (5055) comes first
-EXPOSE 5055 8502
+# Expose ports for Frontend and API
+# Railway uses the first exposed port for PORT env var and routing, so Frontend (8502) comes first
+# Frontend is the primary service that Railway routes to
+EXPOSE 8502 5055
 
 # Copy single-container supervisord configuration
 COPY supervisord.single.conf /etc/supervisor/conf.d/supervisord.conf

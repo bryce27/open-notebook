@@ -3,7 +3,7 @@ builder = "dockerfile"
 dockerfilePath = "Dockerfile.single"
 
 [deploy]
-healthcheckPath = "/health"
+healthcheckPath = "/"
 healthcheckTimeout = 100
 restartPolicyType = "always"
 healthcheckInterval = 10
