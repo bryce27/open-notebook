@@ -6,4 +6,6 @@ dockerfilePath = "Dockerfile.single"
 healthcheckPath = "/api/config"
 healthcheckTimeout = 100
 restartPolicyType = "always"
+healthcheckInterval = 10
+healthcheckConsecutiveFailures = 5
 
