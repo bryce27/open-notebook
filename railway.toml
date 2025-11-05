@@ -3,7 +3,7 @@ builder = "dockerfile"
 dockerfilePath = "Dockerfile.single"
 
 [deploy]
-healthcheckPath = "/"
+healthcheckPath = "/api/config"
 healthcheckTimeout = 100
 restartPolicyType = "always"
 
