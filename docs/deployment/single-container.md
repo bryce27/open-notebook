@@ -131,8 +131,16 @@ For Railway deployment:
 
       **Single Volume - Database & Application Data**:
       - **Mount Path**: `/mydata`
-      - **Size**: Minimum 15GB, recommended 30GB+
+      - **Size**:
+        - **Starter plans**: 5GB (sufficient for initial use, small deployments)
+        - **Recommended**: 15GB+ for medium usage
+        - **Production**: 30GB+ for large deployments with many uploads
       - **Purpose**: Stores both SurrealDB database files AND application data (uploads, assets)
+
+      **Note**: Railway's free/starter plans typically limit volumes to 5GB. This is sufficient for initial use, but you may need to upgrade if you:
+      - Upload many large files (PDFs, audio, video)
+      - Import extensive research datasets
+      - Generate many podcasts (audio files can be large)
 
    6. **Create symlink for application data** (automatically handled):
 
@@ -148,6 +156,7 @@ For Railway deployment:
 
    **Important Notes**:
    - **Railway limitation**: Railway allows only **one volume per service** - we use `/mydata` for everything
+   - **Volume size**: Railway's free/starter plans limit volumes to 5GB (sufficient for initial use). Upgrade if you need more storage.
    - Volumes persist across deployments, making them different from Docker volumes
    - Volume data persists even if you delete and recreate the service (as long as you use the same volume)
    - Railway charges for persistent storage usage (check Railway pricing)
@@ -200,7 +209,10 @@ ELEVENLABS_API_KEY=your_elevenlabs_key
 2. **`/mydata`** - SurrealDB database files
 
 **For Railway** (single volume limitation):
-- Mount **ONE volume** at `/mydata` (minimum 15GB, recommended 30GB+)
+- Mount **ONE volume** at `/mydata`
+  - **Starter plans**: 5GB (Railway's free/starter limit - sufficient for initial use)
+  - **Recommended**: 15GB+ for medium usage
+  - **Production**: 30GB+ for large deployments
 - The container automatically creates a symlink: `/app/data -> /mydata/app_data`
 - Both database and application data persist in the single volume
 
