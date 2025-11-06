@@ -1,0 +1,5 @@
+-- Migration 10 rollback: Model table definition
+-- Note: Rolling back table definitions requires careful consideration
+-- This migration is kept minimal since table definitions cannot be easily undone
+-- without data loss. In practice, you would typically not rollback this migration.
+

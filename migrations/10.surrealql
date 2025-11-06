@@ -1,0 +1,8 @@
+DEFINE TABLE IF NOT EXISTS model SCHEMAFULL;
+
+DEFINE FIELD IF NOT EXISTS name ON TABLE model TYPE string;
+DEFINE FIELD IF NOT EXISTS provider ON TABLE model TYPE string;
+DEFINE FIELD IF NOT EXISTS type ON TABLE model TYPE string;
+DEFINE FIELD IF NOT EXISTS created ON model DEFAULT time::now() VALUE $before OR time::now();
+DEFINE FIELD IF NOT EXISTS updated ON model DEFAULT time::now() VALUE time::now();
+

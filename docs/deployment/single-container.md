@@ -6,7 +6,7 @@ For users who prefer an all-in-one container solution (e.g., PikaPods, Railway, 
 
 The single-container deployment packages everything you need:
 - **SurrealDB**: Database service
-- **FastAPI**: REST API backend  
+- **FastAPI**: REST API backend
 - **Background Worker**: For podcast generation and transformations
 - **Next.js**: Web UI interface
 
@@ -36,11 +36,11 @@ This is the easiest way to get started with persistent data.
          # Required: Add your API keys here
          - OPENAI_API_KEY=your_openai_key
          - ANTHROPIC_API_KEY=your_anthropic_key
-         
+
          # Optional: Additional providers
          - GOOGLE_API_KEY=your_google_key
          - GROQ_API_KEY=your_groq_key
-         
+
          # Optional: Password protection for public deployments
          - OPEN_NOTEBOOK_PASSWORD=your_secure_password
        volumes:
@@ -108,7 +108,51 @@ For Railway deployment:
    OPENAI_API_KEY=your_openai_key
    OPEN_NOTEBOOK_PASSWORD=your_secure_password
    ```
-3. **Configure volumes** in Railway dashboard for data persistence
+
+3. **⚠️ CRITICAL: Configure Persistent Volumes**
+
+   **Data Loss Warning**: Without persistent volumes, all your data (notebooks, sources, model configurations, etc.) will be lost every time Railway redeploys your service. This includes when you:
+   - Add or modify environment variables
+   - Push new code
+   - Restart the service
+   - Railway automatically redeploys
+
+   **Why Volumes Are Required**: Railway's container filesystem is ephemeral. When the container restarts or redeploys, all files in `/mydata` (where SurrealDB stores your database) and `/app/data` (application data, symlinked to `/mydata/app_data`) are lost unless you configure persistent storage.
+
+   **How to Configure Volumes in Railway**:
+
+   **Important**: Railway allows only **one volume per service**. Since the database (`/mydata`) is the most critical, we'll mount a single volume there and use a symlink for application data.
+
+   1. **Go to your Railway project dashboard**
+   2. **Select your service** (the Open Notebook deployment)
+   3. **Click on the "Volumes" tab** (or "Metrics" → "Volumes" depending on Railway UI version)
+   4. **Click "Add Volume"** or "Create Volume"
+   5. **Create ONE volume**:
+
+      **Single Volume - Database & Application Data**:
+      - **Mount Path**: `/mydata`
+      - **Size**: Minimum 15GB, recommended 30GB+
+      - **Purpose**: Stores both SurrealDB database files AND application data (uploads, assets)
+
+   6. **Create symlink for application data** (automatically handled):
+
+      The container automatically creates a symlink from `/app/data` to `/mydata/app_data` on startup. This ensures both database and application data are stored in the single persistent volume. No manual configuration needed!
+
+   7. **Save the configuration** - Railway will automatically mount the volume on the next deployment
+
+   **Verification**:
+   - After deployment, check Railway logs to ensure volumes are mounted
+   - Add a test notebook or model configuration
+   - Trigger a redeploy (e.g., by adding a dummy env var)
+   - Verify your data persists after redeploy
+
+   **Important Notes**:
+   - **Railway limitation**: Railway allows only **one volume per service** - we use `/mydata` for everything
+   - Volumes persist across deployments, making them different from Docker volumes
+   - Volume data persists even if you delete and recreate the service (as long as you use the same volume)
+   - Railway charges for persistent storage usage (check Railway pricing)
+   - Always configure volumes BEFORE adding important data
+   - The symlink ensures both database and application data persist in the single volume
 
 ### DigitalOcean App Platform
 
@@ -149,17 +193,25 @@ ELEVENLABS_API_KEY=your_elevenlabs_key
 
 ### Data Persistence
 
-**Critical**: Always mount these volumes to persist data between container restarts:
+**Critical**: Always mount volumes to persist data between container restarts.
 
+**For Docker Compose / Docker Run** (supports multiple volumes):
 1. **`/app/data`** - Application data (notebooks, sources, uploads)
 2. **`/mydata`** - SurrealDB database files
 
-**Example with proper volumes**:
+**For Railway** (single volume limitation):
+- Mount **ONE volume** at `/mydata` (minimum 15GB, recommended 30GB+)
+- The container automatically creates a symlink: `/app/data -> /mydata/app_data`
+- Both database and application data persist in the single volume
+
+**Example with proper volumes** (Docker Compose):
 ```yaml
 volumes:
   - ./notebook_data:/app/data          # Your notebooks and sources
   - ./surreal_single_data:/mydata      # Database files
 ```
+
+**Note**: Railway allows only one volume per service. See the Railway section above for details on the single-volume configuration.
 
 ## 🔒 Security
 
@@ -257,6 +309,38 @@ docker logs open-notebook-single
 2. **Verify volumes**: Ensure `/mydata` is mounted and writable
 3. **Check startup order**: Wait for full startup (30-60 seconds)
 4. **Restart container**: Sometimes a fresh start helps
+
+### Data Loss After Deployment (Railway)
+
+**Symptoms**:
+- Model configurations disappear after redeploy
+- Notebooks, sources, or notes vanish after adding env vars
+- "No models configured" message appears after deployment
+
+**Root Cause**: Railway persistent volume is not configured for `/mydata` (Railway allows only one volume per service, mounted at `/mydata` with a symlink for `/app/data`)
+
+**Solutions**:
+
+1. **Configure Persistent Volumes** (see Railway section above)
+   - This is the ONLY permanent solution
+   - Must be done BEFORE adding important data
+
+2. **Verify Volume Is Mounted**:
+   - Check Railway service logs for volume mount confirmation
+   - Verify `/mydata` volume exists in Railway dashboard
+   - The symlink `/app/data -> /mydata/app_data` is created automatically on startup
+
+3. **Recover Lost Data**:
+   - If you have a backup, restore from backup
+   - If volumes weren't configured, data cannot be recovered
+   - Reconfigure volumes and start fresh
+
+4. **Prevent Future Loss**:
+   - Always configure volumes first
+   - Test by adding data, then triggering a redeploy
+   - Verify data persists before adding important data
+
+**Note**: This issue affects Railway deployments that don't have persistent volumes configured. Docker Compose and other platforms with proper volume mounts are not affected.
 
 ### Service Startup Problems
 
